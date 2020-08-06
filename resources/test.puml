@@ -1,0 +1,20 @@
+@startuml
+
+title Registration
+
+participant Electron
+participant Server
+participant Jira
+database Redis
+
+activate Electron
+Electron->Server:user login/password
+activate Server
+Server->Jira:user login/password
+activate Jira
+Server<--Jira:status/credential
+deactivate Jira
+Server->Redis:generated token:credential
+Electron<--Server:token
+
+@enduml

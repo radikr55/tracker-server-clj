@@ -1,0 +1,17 @@
+{:db    {:host     "jdbc:postgresql://localhost:5432/timetracker?currentSchema=timetracker",
+         :user     "rad",
+         :port     #or [#env DBPORT 5432]
+         :password "123"},
+ :redis {:host "localhost",
+         :port 6379,
+         :db   1}
+ :jira  {
+         :private-key         #or [#env JIRA_PRIVATE_KEY "LS0tLS1CRUdJTiBFTkNSWVBURUQgUFJJVkFURSBLRVktLS0tLQpNSUlGTFRCWEJna3Foa2lHOXcwQkJRMHdTakFwQmdrcWhraUc5dzBCQlF3d0hBUUlZcjNEcFdhQnByd0NBZ2dBCk1Bd0dDQ3FHU0liM0RRSUpCUUF3SFFZSllJWklBV1VEQkFFcUJCQnhsbTJiTENUZmYrdks4cUwvZ2ozTUJJSUUKME5KR1lycmM4ajYrci8ybGVZd3IxWWU4TFBaMVNiM09SMDE2cmM5eXcveTFHbW5SOGRVa05lNjBTK0JaMzlGOQpRY3hwaWRtOURRbmpHam9TTElJVExsTTJGb2o1dmZnbmM5eGRYSXlvWlBwZERoWUJGMkJCbjJ2b2VLamZvaExyCmxvYkJNQmUyVjVXdXlYRkZ4ZkJ5WUI0VEQ0ODZNbFByalQxNThueFlETldFOElvd1lHK2VaaGJJZjdBaFhwNTgKZUJXTzk3azdwQ1Zrc0xyNm1kY083OWJzb3k0bzFnejcvMXpkZzFCKzc4VTY4WU10S0MrVnFieENKT3ozWFlidwp5b1F1Z2VQUjVUaVJjVlU1UElVWjJwcVIwMzVvYndETnFIR0tLeEt6U0hxVkdia3lvNTdaeXVMeFZnaURpZlBXCkRtU3hEeXZ1VFQwa0UrcVBueDNNbmJCOEhZUkdTTnppVFpkN3o1ekxVci96THRJNlpTUFpNQ3pOOGZDUUVNQTQKd2lwQUtHTU0zbGJlUlJDdzBvYzg2TnFhSW41T1FSS0ZJQlIwNjd6YThnUHpob0NQZTdLMDZqZGVkT21WZXhCbgpoMm9OamlQbWdhUzVldmR2QnNvc0NIZWlIL1NHWng5a0ZiZ1pmc3VlSTkvcXF3ZE95dnc0bW41RVRPQ1JGaEsrClV2ZGduMDJYeUc4MEVpdG5lS3haUHB1OXBtWTVqN3FsMVkzRk9HMU5CKzFaSGFnOWwranRJWFBPOTZTa1g3WUcKTGo2b2w4eXE5QmZVVXdhWDVjK1J3Y3lVYnY3OVFXUTU0Z253dXNmdWdNTWlBRWQyODdGQXdGVWZWbXRScU1xegpPTGZhMm9MeTdoRlh5WUVwU1kvai92dmo2aW1JclRGRDdncU9xWEJjNnZ2cnJMYkEzVXVNRDhack52TFR6blRZCkJQd2xNZXozL0I2cWRBWjBRZEhjNWtIUE0xYkZGQlFzYlNGVGJ0cy84V0ljTGNuYjlONmRpVWlsOEpCeksyQ2cKbDNBYk5Ic0swR3BwT2NEZUJIRk45QjllcERhdmVDczM5Z1lxNUVSN1NybitDekJ6SERzYWVyUDFDOUNzdndSbgpyTlo5UTRGL3BrVlVPU0JhR3dJTFFQbmxQcGxHWFlhTWlIdFA2dDZWOUNTQ3JwbjJsZnBFZXE1eEdwOFEyalluCmx6MVBFRnZxd1VyeTRPVDM2eEpucWtvY2FLaitjcllWR3l2a1Nock1QZnYzcHQvOHE5bE1uajZ4YnAzaG45bFUKZXZnbWJ2NGRmM0RnR0pOR3Z0dnlIeHgrSlE1WVNFNGkrZ2RmZm0vV2xFbmI4b2gzc0hudmFaeHhDaGcxc1ZGagp3MkVVaExObkI3S3RCMDZ4czdramZCY0VYSG04c3BHSUhvUUhPQ1JKYU9waC9mYjF6MTlOM0Y2RlhkakNTbWlpCmxQRkhJMnJtY0hHZXp2cmRsMHUrYWRIY2o3V1ZPNFdTYUdJTGVzU3ZPanBCaElGenVQdDNJa2c4em5vY3Foc2EKRUxZeTB5MzZTYit4U3VBZ2JDcjVtQnZRTkpEaDdwUkFVNmpoWUNzeTN2NDh2M1E3S3RBdXN4RXoycG42RzQ5ZQpkdStHRXMxUXlzTXJxTkN0WGRFOUlvdkVIclFrNHZOdmRMZ0h1MUtINitUazZrRXV4TjJqbCs3dE5mVkNnWGNqCmkwWTEySXozbithT2hpNDl4NHpjd0lMNTViKzBmckxvcUZ5WmNrUFZhRlB1dGlZbi9rc2RZbG9SSkQ1dDJTM08KQ3Q0dzBpYVJGejd4b2tDM3lsWGhqKzc4TnBrV2pkSVN5bkpMTFdsT2lVUHphbHRLRUhKalpSbXIxWVZxS2MwVgpHTkZYeGRjdTJrZnZleE1JdkNvNWlpbmRjT29HcmpWNEd6OXFxNGlXMFFlbWRDOFlpL0NEWGVxdG5qSTh4VEFZCjh2T2tHZ1k3NHVLTlhZTE1ISEtENzdvOHNtYWhRTVp4T1FsMlZEMWlxRU95MDRrc3ErOEJkRDVWanVaN3k3VGYKRUkrWFVDRWd6NXJsT2FYQXJSa1NWNmhkd2g5elVHOWk0T3ROcVRwQ1g2cFJjUzJpTUNtNFBSUHdYNEhpRVRHbgpTZk1ReEdvYVF2QTBHNUE1cU5rYm43Vm44K2t4Umowd1U2d21XRFVrNVlXeQotLS0tLUVORCBFTkNSWVBURUQgUFJJVkFURSBLRVktLS0tLQo="]
+         :pass-phrase         #or [#env JIRA_PRIVATE_KEY_PASSPHRASE "Pass"]
+         :consumer-key        #or [#env JIRA_CUSTOMER_KEY "OauthKey"]
+         :host                #or [#env JIRA_URL "http://localhost:2990/jira"]
+         :plugin-uri          "/rest/timetracker/api/3"
+         :access-token-url    #join [#ref[:jira :host] "/plugins/servlet/oauth/access-token"]
+         :temporary-token-url #join [#ref[:jira :host] "/plugins/servlet/oauth/request-token"]
+         :auth-url            #join [#ref[:jira :host] "/plugins/servlet/oauth/authorize"]
+         }}
