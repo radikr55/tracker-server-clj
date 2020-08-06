@@ -1,14 +1,41 @@
-(defproject server-timetracker "0.1.0-SNAPSHOT"
+(defproject tracker-server-clj "0.1.0-SNAPSHOT"
   :description "Tracking active time"
   :dependencies [[org.clojure/clojure "1.10.1"]
+                 [org.clojure/data.json "1.0.0"]
+                 [org.clojure/java.jdbc "0.7.11"]
+                 [ring/ring-json "0.5.0"]
                  [ring "1.8.1"]
-                 [compojure "1.6.1"]
-                 [clj-time "0.15.2"]  ]
-  :repl-options {:init-ns server-timetracker.core}
-  :main ^:skip-aot server-timetracker.core
+                 [bidi "2.1.6"]
+                 [com.mchange/c3p0 "0.9.5.2"]
+                 [clj-http "2.3.0"]
+                 [raven-clj "1.6.0"]
+                 [clj-time "0.15.2"]
+                 [ring.middleware.logger "0.5.0"]
+                 [cheshire "5.10.0"]
+                 ;; [environ "1.2.0"]
+                 [clj-oauth "1.5.5"]
+                 [oauth-clj "0.1.16"]
+                 [aero "1.1.6"]
+                 [com.taoensso/carmine "2.19.1"]
+                 [honeysql "1.0.444"]
+                 [org.postgresql/postgresql "42.1.4"]
+                 [org.bouncycastle/bcprov-jdk15on "1.64"]
+                 [org.bouncycastle/bcpkix-jdk15on "1.64"]
+                 [com.google.oauth-client/google-oauth-client "1.30.6"]
+                 [com.google.http-client/google-http-client "1.35.0"]]
+  :repl-options {:init-ns app.core}
+  :aot :all
+  :main ^:skip-aot app.core
   :target-path "target/%s"
-  :profile {:uberjar {:aot :all}}
+  :profiles {:uberjar {:aot :all}
+             :dev     {:env {:DBPORT 3333}}}
   :plugins [[lein-codox "0.10.7"]
             [cider/cider-nrepl "0.25.0"]
-            ]
-  )
+            ;; [lein-environ "1.2.0"]
+            [lein-ubersource "0.1.1"]
+            [lein-plantuml "0.1.22"]]
+  :codox {:output-path "doc/codox"
+          :doc-file    ["doc/topics/intro.md", "doc/topics/test.md"]
+          :metadata    {:doc/format :markdown}}
+  :plantuml [["resources/*.puml" :png "doc/images"]
+             ["presentation/*.txt" "svg"]])
