@@ -5,19 +5,29 @@
    [app.responses :as responses]
    [app.jira.auth :as auth]))
 
-(defn get-project [body]
+(defn load-resource [body url]
   (let [token       (:token body)
         secret      (:secret body)
-        url         auth/jira-projects
-        credentials (auth/get-credentials token secret url)]
-    (client/get url
-                {:query-params credentials
-                 :debug        true})))
+        query       (or (:query body) {})
+        credentials (auth/get-credentials token secret url :POST)]
+    (client/post url
+                 {:query-params credentials
+                  :form-params  query
+                  :content-type :json
+                  :debug        true}))
+  )
 
 (defmethod multi-handler :project
   [request]
   (try
-    (responses/ok (get-project (:body request )))
+    (responses/ok (load-resource (:body request) auth/jira-projects))
     (catch Exception e
       (responses/error (ex-data e)))))
 
+
+(defmethod multi-handler :tasks
+  [request]
+  (try
+    (responses/ok (load-resource (:body request) auth/jira-tasks))
+    (catch Exception e
+      (responses/error (ex-data e)))))

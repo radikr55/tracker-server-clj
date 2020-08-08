@@ -10,4 +10,5 @@
         ["oauth" {:post :oauth}]
         ["issue" {:get :issue}]
         ["project" {:post :project}]
+        ["tasks" {:post :tasks}]
         ]])

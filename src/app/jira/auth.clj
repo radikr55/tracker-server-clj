@@ -19,6 +19,7 @@
 (def auth-url (-> config :jira :auth-url))
 (def jira-user (str jira-plugin-url "/user"))
 (def jira-projects (str jira-plugin-url "/projectsWithTasks"))
+(def jira-tasks (str jira-plugin-url "/tasks"))
 
 (defn decode [to-decode]
   (.decode (Base64/getDecoder) to-decode))
@@ -134,15 +135,20 @@
   (def access-token-response (oauth/access-token consumer
                                                  request-token
                                                  @verifier))
-  (def conss
-    (redis/get-access-token "N1bwpSLK8l7eY26DRjlo7fJ5gcazHytO"))
+  (def conss 
+    {:token "u2f1xxn59NvZypz2UgjU4hROlA27KnFR", :secret "tFNoXNB7S9BZo8Pf3qD43u550uMLsuXi"}
+    )
 
   (def credentials (oauth/credentials consumer
-                                      (:oauth_token conss)
-                                      (:oauth_token_secret conss)
-                                      :GET
-                                      "http://192.168.0.101:2990/jira/rest/timetracker/api/3/user"))
+                                      (:token conss)
+                                      (:secret conss)
+                                      :POST
+                                      "http://192.168.0.102:2990/jira/rest/timetracker/api/3/tasks"))
 
-  (client/get "http://192.168.0.101:2990/jira/rest/timetracker/api/3/user"
-              {:query-params credentials
-               :debug        true}))
+  (def query {:key "test"})
+
+  (client/post "http://192.168.0.102:2990/jira/rest/timetracker/api/3/tasks"
+               {:query-params credentials
+                :form-params  query
+                :debug        true})
+  )

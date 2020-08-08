@@ -69,7 +69,7 @@
     (wrap-json-body {:keywords? true})
     wrap-json-response
     (wrap-resource "public")
-    (wrap-sentry DSN)
+    ;; (wrap-sentry DSN)
     ))
 
 (def server
