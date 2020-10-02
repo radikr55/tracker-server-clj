@@ -5,10 +5,13 @@
 
 (def routes
   ["/" [["" :home]
-        ["login" {:post :login}]
-        ["register" :register]
+        ["auth-link" {:get :auth-link}]
         ["oauth" {:post :oauth}]
-        ["issue" {:get :issue}]
+        ["user-name" {:post :user-name}]
+        ["ping" {:post :save-ping}]
+        ["track-logs" {:post :get-track-logs}]
         ["project" {:post :project}]
+        ["submit" {:post :submit}]
         ["tasks" {:post :tasks}]
+        ["by-project-id" {:post :by-project-id}]
         ]])

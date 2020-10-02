@@ -6,17 +6,16 @@
              :order-by [:id]
              :limit    10})
 
-(def q-users
-  {:select   [:jira_user_name :email]
-   :from     [:users]
-   :order-by [:id]
-   :limit    10})
+(defn get-user-id [user-name]
+  (pool/execute {:select   [:id]
+                 :from     [:users]
+                 :order-by [:id]
+                 :where    [:= :jira_user_name user-name]}))
 
 (defn load-users []
   (pool/execute sqlmap))
 
 (comment
   (load-users)
-  (pool/execute q-users)
-  )
+  (pool/execute q-users))
 

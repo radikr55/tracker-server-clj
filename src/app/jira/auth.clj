@@ -13,13 +13,9 @@
 (def private-key (-> config :jira :private-key))
 (def pass-phrase (-> config :jira :pass-phrase))
 (def consumer-key (-> config :jira :consumer-key))
-(def jira-plugin-url (str (-> config :jira :host) (-> config :jira :plugin-uri)))
 (def access-token-url (-> config :jira :access-token-url))
 (def temporary-token-url (-> config :jira :temporary-token-url))
 (def auth-url (-> config :jira :auth-url))
-(def jira-user (str jira-plugin-url "/user"))
-(def jira-projects (str jira-plugin-url "/projectsWithTasks"))
-(def jira-tasks (str jira-plugin-url "/tasks"))
 
 (defn decode [to-decode]
   (.decode (Base64/getDecoder) to-decode))
@@ -59,7 +55,7 @@
                                    :rsa-sha1))
 
 (defn request-token []
-  (oauth/request-token consumer  "http://192.168.0.102:3000/oauth"))
+  (oauth/request-token consumer  "http://localhost:8666/login"))
 
 (defn get-approval-url [request-token]
   (oauth/user-approval-uri consumer
@@ -69,24 +65,6 @@
   (oauth/access-token consumer
                       request-token
                       verifier))
-
-(defn get-user [login password]
-  (client/get jira-user
-              {:query-params
-               {:os_username login
-                :os_password password}}))
-
-(defn get-credentials
-  ([token secret url] (oauth/credentials consumer
-                                         token
-                                         secret
-                                         :GET
-                                         url))
-  ([token secret url method] (oauth/credentials consumer
-                                                token
-                                                secret
-                                                method
-                                                url)))
 
 (comment
   ;; (reset! verifier "asdf123j")
@@ -136,18 +114,18 @@
                                                  request-token
                                                  @verifier))
   (def conss 
-    {:token "u2f1xxn59NvZypz2UgjU4hROlA27KnFR", :secret "tFNoXNB7S9BZo8Pf3qD43u550uMLsuXi"}
+    {:token "YxUmYRnEptfDgVoDMZF334YevwKSvxA6", :secret "s4xT7GA0J5rAqRLddH6ge2NVv4sJxIRL"}
     )
 
   (def credentials (oauth/credentials consumer
                                       (:token conss)
                                       (:secret conss)
                                       :POST
-                                      "http://192.168.0.102:2990/jira/rest/timetracker/api/3/tasks"))
+                                      "http://localhost:2990/jira/rest/timetracker/api/3/tasks"))
 
   (def query {:key "test"})
 
-  (client/post "http://192.168.0.102:2990/jira/rest/timetracker/api/3/tasks"
+  (client/post "http://localhost:2990/jira/rest/timetracker/api/3/tasks"
                {:query-params credentials
                 :form-params  query
                 :debug        true})

@@ -5,6 +5,7 @@
    :headers {"content-type" "application/json"}
    :body    response})
 
-(defn error [response]
+(defn error [response ex]
+  (print ex)
   {:status 404
    :body   response})

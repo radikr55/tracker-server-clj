@@ -5,8 +5,7 @@
               [clojure.java.jdbc :as jdbc]
               [honeysql.helpers :refer :all]))
 
-(defn pool
-  [spec]
+(defn pool  [spec]
   (let [cpds (doto (ComboPooledDataSource.)
                (.setDriverClass (:classname spec))
                (.setUser (:user spec))
@@ -29,8 +28,8 @@
 (defn db-connection [] @pooled-db)
 
 (defn execute [sqlmap]
-  (jdbc/query (db-connection)  (sql/format sqlmap)))
-
+  (let [sql (sql/format sqlmap :quoting :ansi)]
+    (jdbc/query (db-connection) sql)))
 
 (comment
   db-spec
@@ -38,4 +37,4 @@
              :from     [:users]
              :order-by [:id]
              :limit    10})
-  (execute test) )
+  (execute test))

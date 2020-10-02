@@ -3,31 +3,36 @@
    [clj-http.client :as client]
    [app.routes :refer [multi-handler]]
    [app.responses :as responses]
+   [app.jira.api :as api]
    [app.jira.auth :as auth]))
-
-(defn load-resource [body url]
-  (let [token       (:token body)
-        secret      (:secret body)
-        query       (or (:query body) {})
-        credentials (auth/get-credentials token secret url :POST)]
-    (client/post url
-                 {:query-params credentials
-                  :form-params  query
-                  :content-type :json
-                  :debug        true}))
-  )
 
 (defmethod multi-handler :project
   [request]
   (try
-    (responses/ok (load-resource (:body request) auth/jira-projects))
+    (responses/ok (api/load-resource {:body     (:body request)
+                                      :method   :POST
+                                      :endpoint :jira-projects}))
     (catch Exception e
-      (responses/error (ex-data e)))))
-
+      (responses/error (ex-data e) e))))
 
 (defmethod multi-handler :tasks
   [request]
   (try
-    (responses/ok (load-resource (:body request) auth/jira-tasks))
+    (responses/ok (api/load-resource {:body     (:body request)
+                                      :method   :POST
+                                      :endpoint :jira-tasks}))
     (catch Exception e
-      (responses/error (ex-data e)))))
+      (responses/error (ex-data e) e))))
+
+(defmethod multi-handler :by-project-id
+  [request]
+  (try
+    (if (-> request :body :query :key)
+      (responses/ok (api/load-resource {:body     (:body request)
+                                        :method   :POST
+                                        :endpoint :jira-by-project-id}))
+      (responses/ok (api/load-resource {:body     (dissoc (:body request) :query)
+                                        :method   :POST
+                                        :endpoint :jira-projects})))
+    (catch Exception e
+      (responses/error (ex-data e) e))))

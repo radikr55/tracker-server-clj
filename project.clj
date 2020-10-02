@@ -18,11 +18,13 @@
                  [aero "1.1.6"]
                  [com.taoensso/carmine "2.19.1"]
                  [honeysql "1.0.444"]
+                 [metabase/honeysql-util "1.0.2"]
                  [org.postgresql/postgresql "42.1.4"]
                  [org.bouncycastle/bcprov-jdk15on "1.64"]
                  [org.bouncycastle/bcpkix-jdk15on "1.64"]
                  [com.google.oauth-client/google-oauth-client "1.30.6"]
                  [com.google.http-client/google-http-client "1.35.0"]]
+  :jvm-opts ["-Duser.timezone=UTC"]
   :repl-options {:init-ns app.core}
   :aot :all
   :main ^:skip-aot app.core

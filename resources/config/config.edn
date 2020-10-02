@@ -1,7 +1,7 @@
 {:db    {:host     "jdbc:postgresql://localhost:5432/timetracker?currentSchema=timetracker",
-         :user     "rad",
+         :user     "postgres",
          :port     #or [#env DBPORT 5432]
-         :password "123"},
+         :password ""},
  :redis {:host "localhost",
          :port 6379,
          :db   1}
