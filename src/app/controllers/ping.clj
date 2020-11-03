@@ -2,116 +2,239 @@
   (:require   [app.routes :refer [multi-handler]]
               [app.responses :as responses]
               [app.repository.track-log-repo :as track-repo]
+              [app.repository.active-task-repo :as active-repo]
+              [app.service.track-log-service :as service]
               [app.jira.api :as api]
               [clj-time.coerce :as c]
               [clj-time.core :as t]
-              [clj-time.format :as f]
-              [clojure.pprint :refer [pprint]]
-              [app.repository.user-repo :as u]))
-
-(defn get-interval [start end]
-  (t/in-minutes (t/interval start end)))
-
-(defn formatlocal [date-str offset]
-  (let [format (f/formatter-local "yyyy-MM-dd HH:mm:ss")
-        zone   (t/time-zone-for-offset (/ offset 60))
-        resp   (t/to-time-zone (c/from-string date-str) zone)]
-    (f/parse format (f/unparse format resp))))
+              [app.utils :as utils]
+              [clojure.pprint :refer [pprint]]))
 
 (defmethod multi-handler :get-track-logs
-  [request]
+  [{:keys [body user-id]}]
   (try
-    (let [jira-user-name (api/load-resource {:endpoint :jira-user
-                                             :body     (:body request)})
-          offset         (-> request :body :offset)
-          start          (formatlocal (-> request :body :start) offset)
-          end            (formatlocal (-> request :body :end) offset)
-          user-id        (-> (u/get-user-id jira-user-name)
-                             first
-                             :id)
-          track-logs     (track-repo/load-track-logs start end user-id)
-          task-codes     (->> track-logs
-                              (map :task)
-                              (into #{})
-                              (filter #(not (empty? %)))
-                              (map #(assoc {} :issueCode %)))
-          issue-list     (->> (assoc  (:body request)
-                                      :query {:list      task-codes
-                                              :endDate   end
-                                              :startDate start})
-                              (assoc {:endpoint :issue
-                                      :json     true
-                                      :method   :POST} :body)
-                              (load-from-jira))]
+    (let [offset       (:offset body)
+          start        (utils/formatlocal (:start body) offset)
+          end          (utils/formatlocal (:end body) offset)
+          active-tasks (->> (active-repo/load-active-tasks user-id)
+                            (map :task))
+          track-logs   (track-repo/load-track-logs start end user-id)
+          task-codes   (->> track-logs
+                            (map :task)
+                            (concat active-tasks)
+                            (into #{})
+                            (filter #(seq %))
+                            (map #(assoc {} :issueCode %)))
+          issue-list   (->> (assoc  body
+                                    :query {:list      task-codes
+                                            :endDate   end
+                                            :startDate start})
+                            (assoc {:endpoint :issue
+                                    :json     true
+                                    :method   :POST} :body)
+                            (api/load-resource))]
       (responses/ok (assoc {} :data track-logs :desc issue-list)))
     (catch Exception e
       (responses/error (ex-data e) e))))
 
-(comment
-  (def list '({:start_date #inst "2020-07-17T04:54:00.000000000-00:00",
-               :end_date   #inst "2020-07-17T06:48:00.000000000-00:00",
-               :task       "WELKIN-76"}
-              {:start_date #inst "2020-07-17T08:04:00.000000000-00:00",
-               :end_date   #inst "2020-07-17T08:06:00.000000000-00:00",
-               :task       "WELKIN-76"}
-              {:start_date #inst "2020-07-17T08:06:00.000000000-00:00",
-               :end_date   #inst "2020-07-17T08:30:00.000000000-00:00",
-               :task       ""}
-              {:start_date #inst "2020-07-17T08:30:00.000000000-00:00",
-               :end_date   #inst "2020-07-17T10:42:00.000000000-00:00",
-               :task       "WELKIN-76"}
-              {:start_date #inst "2020-07-17T10:42:00.000000000-00:00",
-               :end_date   #inst "2020-07-17T10:45:00.000000000-00:00",
-               :task       ""}))
-
-  (let [task-codes (->> list
-                        (map :task)
-                        (into #{})
-                        (filter #(not (empty? %)))
-                        (map #(assoc {} :issueCode %)))
-        issue-list (->> (assoc  {:token  "WZv45yWt0ReOJGAYEfJFh6e8B2nAXxrm"
-                                 :secret "35494zhP2SmiGGNxo774lT8HNT5YJXwZ"}
-                                :query {:list      task-codes
-                                        :endDate   (t/date-time 2020 7 14 21)
-                                        :startDate (t/date-time 2020 7 13 21)})
-                        (assoc {:endpoint :issue
-                                :json     true
-                                :method   :POST} :body)
-                        (load-from-jira))]
-    (print (:issueWithSummary issue-list)))
-  (load-from-jira {:endpoint :jira-user
-                   :method   :GET
-                   :body     {:token  "WZv45yWt0ReOJGAYEfJFh6e8B2nAXxrm"
-                              :secret "35494zhP2SmiGGNxo774lT8HNT5YJXwZ"}}))
-
 (defmethod multi-handler :save-ping
-  [request]
+  [{:keys [body user-id]}]
+  (pprint body)
   (try
-    (let [body           (:body request)
-          jira-user-name (api/load-resource {:endpoint :jira-user
-                                             :body     body})
-          user-id        (-> (u/get-user-id jira-user-name)
-                             first
-                             :id)
-          offset         (:offset body)]
-      (->> body
-           :data
-           (map #(assoc %
-                        :start (formatlocal (:start %) offset)
-                        :end (formatlocal (:end %) offset)
-                        ;; :log_length (get-interval (:start %) (:end %))
-                        :user_id user-id))
-           pprint))
+    (let [offset         (:offset body)
+          map->track-log (fn [item]
+                           (let [start        (utils/formatlocal (:start item) offset)
+                                 end          (utils/formatlocal (:end item) offset)
+                                 status       (:status item)
+                                 task         (:task item)
+                                 inactive-log (= "inactive" status)]
+                             {:start        start
+                              :end          end
+                              :inactive_log inactive-log
+                              :uuid         (.toString (java.util.UUID/randomUUID))
+                              :status       status
+                              :task         task
+                              :log_length   (utils/get-interval start end)
+                              :user_id      user-id}))
+          track-logs     (->> body
+                              :data
+                              (map map->track-log)
+                              (filter #(not (t/equal? (:start %) (:end %)))))]
+      (doseq [log track-logs]
+        (service/save-track-logs user-id log)))
     (responses/ok {:test 123})
     (catch Exception e
       (responses/error (ex-data e) e))))
 
+(comment
+
+  ;; {"name" : "r.shylo", "token" : "o4zAKoL9twxHwUIN0zMTc04P38fAC8tP", "secret" : "aS3BBfU1TuMIZRdp6UGmcQVkOZdgweg3", "data" : [{"start" : "2020-11-01T20:04:00.000Z", "end" : "2020-11-01T20:06:00.000Z", "status" : "active", "task" : "WELKIN-76", "inactive" :false},{"start" : "2020-11-01T20:06:00.000Z", "end" : "2020-11-01T20:32:00.000Z", "status" : "inactive", "task" : "WELKIN-76", "inactive" :true},{"start" : "2020-11-01T20:32:00.000Z", "end" : "2020-11-01T20:33:00.000Z", "status" : "active", "task" : "WELKIN-76", "inactive" :false}], "offset" :-120}
+
+  ;; #js {:method "post", :baseURL "http://localhost:3000/", :url "/ping", :params nil, :data #js {:name "r.shylo", :token "o4zAKoL9twxHwUIN0zMTc04P38fAC8tP", :secret "aS3BBfU1TuMIZRdp6UGmcQVkOZdgweg3", :data #js [#js {:start "2020-11-01T20:04:00.000Z", :end "2020-11-01T20:06:00.000Z", :status "active", :task "WELKIN-76", :inactive false} #js {:start "2020-11-01T20:06:00.000Z", :end "2020-11-01T20:32:00.000Z", :status "inactive", :task "WELKIN-76", :inactive true} #js {:start "2020-11-01T20:32:00.000Z", :end "2020-11-01T20:33:00.000Z", :status "active", :task "WELKIN-76", :inactive false}], :offset -120}}
+
+  ;; {:status 200, :statusText OK, :headers {:connection close, :date Sun, 01 Nov 2020 18:33:34 GMT, :content-type application/json;charset=utf-8, :content-length 12, :server Jetty(9.4.28.v20200408)}, :config {:maxBodyLength -1, :adapter #object[httpAdapter], :baseURL http://localhost:3000/, :xsrfHeaderName X-XSRF-TOKEN, :transformResponse [#object[transformResponse]], :method post, :validateStatus #object[validateStatus], :params nil, :headers {:Accept application/json, text/plain, */*, :Content-Type application/json;charset=utf-8, :User-Agent axios/0.20.0, :Content-Length 501}, :xsrfCookieName XSRF-TOKEN, :url /ping, :timeout 0, :maxContentLength -1, :transformRequest [#object[transformRequest]], :data {"name":"r.shylo","token":"o4zAKoL9twxHwUIN0zMTc04P38fAC8tP","secret":"aS3BBfU1TuMIZRdp6UGmcQVkOZdgweg3","data":[{"start":"2020-11-01T20:04:00.000Z","end":"2020-11-01T20:06:00.000Z","status":"active","task":"WELKIN-76","inactive":false},{"start":"2020-11-01T20:06:00.000Z","end":"2020-11-01T20:32:00.000Z","status":"inactive","task":"WELKIN-76","inactive":true},{"start":"2020-11-01T20:32:00.000Z","end":"2020-11-01T20:33:00.000Z","status":"active","task":"WELKIN-76","inactive":false}],"offset":-120}}, :request #object[ClientRequest [object Object]], :data {:test 123}}
+  ;; #object[Error Error: Can't pop empty vector]
+  ;; #js {:method "post", :baseURL "http://localhost:3000/", :url "/ping", :params nil, :data #js {:name "r.shylo", :token "o4zAKoL9twxHwUIN0zMTc04P38fAC8tP", :secret "aS3BBfU1TuMIZRdp6UGmcQVkOZdgweg3", :data #js [#js {:start "2020-11-01T20:33:00.000Z", :end "2020-11-01T20:35:00.000Z", :status "active", :task "WELKIN-76", :inactive false} #js {:start "2020-11-01T20:35:00.000Z", :end "2020-11-01T20:36:00.000Z", :status "active", :task "WELKIN-76", :inactive false}], :offset -120}}
+
+  ;; (multi-handler {:handler :get-track-logs
+  ;;                 :body    {:token  "JvQH2GElcHLqSsGvAYAFipdNwGd92XpR"
+  ;;                           :secret "aL9MBlTHh87AYC8iIpPdrUiGd8f5MrjG"
+  ;;                           :offset 0
+  ;;                           :start  "2020-10-26T19:05:00.000Z",
+  ;;                           :end    "2020-10-26T20:00:00.000Z",
+  ;;                           }})
+
+  ;; (active-repo/load-active-tasks 166)
+  (multi-handler {:handler :save-ping
+                  :user-id 166
+                  :body    {:name   "r.shylo",
+                            :token  "o4zAKoL9twxHwUIN0zMTc04P38fAC8tP",
+                            :secret "aS3BBfU1TuMIZRdp6UGmcQVkOZdgweg3",
+                            :data
+                            [{:start    "2020-11-01T20:51:00.000Z",
+                              :end      "2020-11-01T20:52:00.000Z",
+                              :status   "active",
+                              :task     "WELKIN-76",
+                              :inactive false}],
+                            :offset -120}})
+
+  (multi-handler {:handler :save-ping
+                  :user-id 166
+                  :body    {:name   "r.shylo",
+                            :token  "o4zAKoL9twxHwUIN0zMTc04P38fAC8tP",
+                            :secret "aS3BBfU1TuMIZRdp6UGmcQVkOZdgweg3",
+                            :data
+                            [{:start    "2020-11-01T20:51:00.000Z",
+                              :end      "2020-11-01T20:51:00.000Z",
+                              :status   "active",
+                              :task     "WELKIN-76",
+                              :inactive false}],
+                            :offset -120}})
+
+  (multi-handler {:handler :save-ping
+                  :user-id 166
+                  :body    {:name   "r.shylo",
+                            :token  "o4zAKoL9twxHwUIN0zMTc04P38fAC8tP",
+                            :secret "aS3BBfU1TuMIZRdp6UGmcQVkOZdgweg3",
+                            :data
+                            [{:start    "2020-11-01T20:56:00.000Z",
+                              :end      "2020-11-01T20:56:00.000Z",
+                              :status   "active",
+                              :task     "WELKIN-76",
+                              :inactive false}
+                             {:start    "2020-11-01T20:57:00.000Z",
+                              :end      "2020-11-01T20:58:00.000Z",
+                              :status   "active",
+                              :task     "WELKIN-76",
+                              :inactive false}
+                             {:start    "2020-11-01T20:59:00.000Z",
+                              :end      "2020-11-01T20:59:00.000Z",
+                              :status   "active",
+                              :task     "WELKIN-76",
+                              :inactive false}],
+                            :offset -120}})
+
+  (multi-handler {:handler :save-ping
+                  :body    {:token  "JvQH2GElcHLqSsGvAYAFipdNwGd92XpR"
+                            :secret "aL9MBlTHh87AYC8iIpPdrUiGd8f5MrjG"
+                            :offset -120
+                            :data   [{:start    "2020-10-17T10:57:00.000Z",
+                                      :end      "2020-10-17T11:57:00.000Z",
+                                      :status   "active",
+                                      :task     "WELKIN-76",
+                                      :inaclive true,
+                                      :user_id  166}]}})
+
+  (multi-handler {:handler :save-ping
+                  :body    {:token  "JvQH2GElcHLqSsGvAYAFipdNwGd92XpR"
+                            :secret "aL9MBlTHh87AYC8iIpPdrUiGd8f5MrjG"
+                            :offset -120
+                            :data   [{:start        "2020-10-30T20:15:00.000Z",
+                                      :end          "2020-10-30T20:42:00.000Z",
+                                      :inactive_log false,
+                                      :uuid         "2a6b04c6-6f23-496e-bfe9-2ec20c6a84da",
+                                      :task         "WELKIN-76",
+                                      :status       "active",
+                                      :log_length   27,
+                                      :user_id      166}
+                                     {:start        "2020-10-30T20:43:00.000Z",
+                                      :end          "2020-10-30T20:43:00.000Z",
+                                      :inactive_log false,
+                                      :status       "inactive",
+                                      :uuid         "cc7e7daf-d977-42c7-9b01-d78bad05b28f",
+                                      :task         "WELKIN-76",
+                                      :log_length   0,
+                                      :user_id      166}
+                                     {:start        "2020-10-30T20:44:00.000Z",
+                                      :end          "2020-10-30T20:49:00.000Z",
+                                      :inactive_log false,
+                                      :status       "active",
+                                      :uuid         "1c0ec0ec-8320-43fe-b88f-245f5d80eab5",
+                                      :task         "WELKIN-76",
+                                      :log_length   5,
+                                      :user_id      166}]}})
+
+  ;; (multi-handler {:handler :save-ping
+  ;;                 :body    {:token  "JvQH2GElcHLqSsGvAYAFipdNwGd92XpR"
+  ;;                           :secret "aL9MBlTHh87AYC8iIpPdrUiGd8f5MrjG"
+  ;;                           :offset -120
+  ;;                           :data   [{:start    "2020-10-17T10:57:00.000Z",
+  ;;                                     :end      "2020-10-17T11:57:00.000Z",
+  ;;                                     :status   "inactive",
+  ;;                                     :task     "WELKIN-76",
+  ;;                                     :inaclive true,
+  ;;                                     :user_id  166}]}})
+
+  (multi-handler {:handler :save-ping
+                  :body    {:token  "JvQH2GElcHLqSsGvAYAFipdNwGd92XpR"
+                            :secret "aL9MBlTHh87AYC8iIpPdrUiGd8f5MrjG"
+                            :offset -120
+                            :data   [{:start    "2020-10-17T10:55:00.000Z",
+                                      :end      "2020-10-17T12:57:00.000Z",
+                                      :status   "inactive",
+                                      :task     "WELKIN-76",
+                                      :inaclive true,
+                                      :user_id  166}]}})
+
+  (do (multi-handler {:handler :save-ping
+                      :body    {:token  "JvQH2GElcHLqSsGvAYAFipdNwGd92XpR"
+                                :secret "aL9MBlTHh87AYC8iIpPdrUiGd8f5MrjG"
+                                :offset -120
+                                :data   [{:start    "2020-10-17T10:50:00.000Z",
+                                          :end      "2020-10-17T10:57:00.000Z",
+                                          :status   "active",
+                                          :task     "WELKIN-76",
+                                          :inaclive false,
+                                          :user_id  166}]}})
+      (multi-handler {:handler :save-ping
+                      :body    {:token  "JvQH2GElcHLqSsGvAYAFipdNwGd92XpR"
+                                :secret "aL9MBlTHh87AYC8iIpPdrUiGd8f5MrjG"
+                                :offset -120
+                                :data   [{:start    "2020-10-17T11:57:00.000Z",
+                                          :end      "2020-10-17T12:57:00.000Z",
+                                          :status   "inactive",
+                                          :task     "WELKIN-76",
+                                          :inaclive true,
+                                          :user_id  166}]}})
+      (multi-handler {:handler :save-ping
+                      :body    {:token  "JvQH2GElcHLqSsGvAYAFipdNwGd92XpR"
+                                :secret "aL9MBlTHh87AYC8iIpPdrUiGd8f5MrjG"
+                                :offset -120
+                                :data   [{:start    "2020-10-17T11:00:00.000Z",
+                                          :end      "2020-10-17T11:57:00.000Z",
+                                          :status   "active",
+                                          :task     "WELKIN-76",
+                                          :inaclive false,
+                                          :user_id  166}]}}))
+
+  (str (name :tasd) "123"))
+
 (defn collect-query [x]
   (for [temp x]
     (let [offset (:offset temp)
-          date   (formatlocal (-> temp :date) offset)
-          start  (formatlocal (c/to-string (t/with-time-at-start-of-day date)) offset)
-          end    (formatlocal (c/to-string (t/with-time-at-start-of-day (t/plus- date (t/days 1)))) offset)]
+          date   (utils/formatlocal (-> temp :date) offset)
+          start  (utils/formatlocal (c/to-string (t/with-time-at-start-of-day date)) offset)
+          end    (utils/formatlocal (c/to-string (t/with-time-at-start-of-day (t/plus- date (t/days 1)))) offset)]
       (assoc temp
              :startDay (c/to-string start)
              :endDay (c/to-string end)))))

@@ -1,10 +1,7 @@
 (ns app.controllers.project
-  (:require
-   [clj-http.client :as client]
-   [app.routes :refer [multi-handler]]
-   [app.responses :as responses]
-   [app.jira.api :as api]
-   [app.jira.auth :as auth]))
+  (:require [app.routes :refer [multi-handler]]
+            [app.responses :as responses]
+            [app.jira.api :as api]))
 
 (defmethod multi-handler :project
   [request]

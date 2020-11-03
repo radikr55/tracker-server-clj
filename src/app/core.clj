@@ -2,17 +2,21 @@
   (:require [ring.adapter.jetty :refer [run-jetty]]
             [ring.middleware.resource :refer [wrap-resource]]
             [bidi.bidi :as bidi]
-            [clojure.pprint :as pp]
-            [clojure.data.json :as json]
             [ring.middleware.json :refer [wrap-json-response wrap-json-body]]
-            [ring.middleware.params :refer [wrap-params]]
             [app.routes :refer [routes multi-handler]]
+            [app.jira.api :as api]
+            [app.repository.user-repo :as u]
             [app.controllers.login :as login]
             [app.controllers.project :as project]
             [app.controllers.ping :as ping]
-            [raven-clj.core :refer [capture]]
-            [raven-clj.ring :refer [wrap-sentry]]
-            ))
+            [app.controllers.task :as task]))
+
+(def white-list     #{:auth-link
+                      :user-name
+                      :oauth
+                      :tasks
+                      :project
+                      :by-project-id})
 
 (extend-protocol cheshire.generate/JSONable
   org.joda.time.DateTime
@@ -25,27 +29,34 @@
     (let [{:keys [uri]} request
           request*      (bidi/match-route*
                           routes uri request)]
-      (time (handler request*) ))))
+      (time (handler request*)))))
+
+(defn wrap-user
+  [handler]
+  (fn [request]
+    (if (contains? white-list (:handler request))
+      (handler request)
+      (let [jira-user-name (api/load-resource {:endpoint :jira-user
+                                               :body     (:body request)})
+            user-id        (-> (u/get-user-id jira-user-name)
+                                first
+                                :id)]
+        (handler (assoc request
+                        :user-id        user-id
+                        :jira-user-name jira-user-name))))))
 
 (def app
   (->
     (wrap-handler multi-handler)
+    (wrap-user)
     (wrap-json-body {:keywords? true})
     wrap-json-response
-    (wrap-resource "public")
-    ))
+    (wrap-resource "public")))
 
 (def server
   (run-jetty #'app {:port  3000
                     :join? false}))
 
 (comment
-  (.getHost (.getContext server))
-  (defn ok [arg] (prn arg) {:status 200
-                            :body   "123"})
-  (get {"oauth_verifier" "D0eyQx"} "oauth_verifier")
-  (oauth-callback {:query-params {"oauth_verifier" "D0eyQx"}})
-  (t/date-time 1986 10 14)
-  (get {:test 123} "test")
   (.stop server)
-  (repo/load-users))
+  )

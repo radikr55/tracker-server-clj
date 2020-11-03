@@ -2,8 +2,7 @@
   (:import (com.mchange.v2.c3p0 ComboPooledDataSource))
   (:require   [honeysql.core :as sql]
               [app.config :refer [config]]
-              [clojure.java.jdbc :as jdbc]
-              [honeysql.helpers :refer :all]))
+              [clojure.java.jdbc :as jdbc]))
 
 (defn pool  [spec]
   (let [cpds (doto (ComboPooledDataSource.)
@@ -27,14 +26,22 @@
 
 (defn db-connection [] @pooled-db)
 
-(defn execute [sqlmap]
+(defn query [sqlmap]
   (let [sql (sql/format sqlmap :quoting :ansi)]
     (jdbc/query (db-connection) sql)))
 
+(defn execute [sqlmap]
+  (let [sql (sql/format sqlmap :quoting :ansi)]
+    (print sql)
+    (jdbc/execute! (db-connection) sql)))
+
+(defn nextval [table]
+  (sql/call :nextval (str table "_seq")))
+
 (comment
   db-spec
-  (def test {:select   [:*]
-             :from     [:users]
-             :order-by [:id]
-             :limit    10})
+  ;; (def test {:select   [:*]
+  ;;            :from     [:users]
+  ;;            :order-by [:id]
+  ;;            :limit    10})
   (execute test))

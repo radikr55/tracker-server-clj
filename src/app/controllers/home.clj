@@ -1,11 +1,5 @@
 (ns app.controllers.home
-  (:require
-   [clj-http.client :as client]
-   [app.routes :refer [multi-handler]]
-   [app.responses :as responses]
-   [app.jira.auth :as auth]))
+  (:require [app.routes :refer [multi-handler]]))
 
-
-(defmethod multi-handler :home
-  [request]
+(defmethod multi-handler :home [_]
   (throw ( Exception. "test" )))
