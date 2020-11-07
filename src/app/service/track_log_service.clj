@@ -234,7 +234,7 @@
 
 (defn save-track-logs
   [user-id track-log]
-  (let [new-start         (:start track-log)
+  (let [new-start         (t/minus- (:start track-log) (t/minutes 1))
         new-end           (:end track-log)
         intersection-logs (track-repo/load-intersection new-start new-end user-id)]
     (cond

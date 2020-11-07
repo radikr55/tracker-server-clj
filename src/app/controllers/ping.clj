@@ -91,15 +91,25 @@
                             :token  "o4zAKoL9twxHwUIN0zMTc04P38fAC8tP",
                             :secret "aS3BBfU1TuMIZRdp6UGmcQVkOZdgweg3",
                             :data
-                            [{:start    "2020-11-01T20:51:00.000Z",
-                              :end      "2020-11-01T20:51:00.000Z",
-                              :status   "inactive",
-                              :task     "WELKIN-76",
-                              :inactive true}
-                             {:start    "2020-11-01T20:53:00.000Z",
-                              :end      "2020-11-01T20:56:00.000Z",
+                            [{:start    "2020-11-07T19:03:00.000Z",
+                              :end      "2020-11-07T19:05:00.000Z",
                               :status   "active",
-                              :task     "WELKIN-76",
+                              :task     "WELKIN-57",
+                              :inactive false}
+                             {:start    "2020-11-07T22:09:00.000Z",
+                              :end      "2020-11-07T22:09:00.000Z",
+                              :status   "active",
+                              :task     "WELKIN-57",
+                              :inactive false}
+                             {:start    "2020-11-07T22:09:00.000Z",
+                              :end      "2020-11-07T22:18:00.000Z",
+                              :status   "inactive",
+                              :task     "",
+                              :inactive true}
+                             {:start    "2020-11-07T22:18:00.000Z",
+                              :end      "2020-11-07T22:19:00.000Z",
+                              :status   "active",
+                              :task     "WELKIN-57",
                               :inactive false}],
                             :offset -120}})
 
@@ -109,8 +119,8 @@
                             :token  "o4zAKoL9twxHwUIN0zMTc04P38fAC8tP",
                             :secret "aS3BBfU1TuMIZRdp6UGmcQVkOZdgweg3",
                             :data
-                            [{:start    "2020-11-01T20:52:00.000Z",
-                              :end      "2020-11-01T20:55:00.000Z",
+                            [{:start    "2020-11-01T20:57:00.000Z",
+                              :end      "2020-11-01T20:58:00.000Z",
                               :status   "active",
                               :task     "WELKIN-76",
                               :inactive false}],
