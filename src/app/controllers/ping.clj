@@ -4,8 +4,8 @@
               [app.repository.track-log-repo :as track-repo]
               [app.repository.active-task-repo :as active-repo]
               [app.service.track-log-service :as service]
+              [app.service.submit-service :as subservice]
               [app.jira.api :as api]
-              [clj-time.coerce :as c]
               [clj-time.core :as t]
               [app.utils :as utils]
               [clojure.pprint :refer [pprint]]))
@@ -92,7 +92,12 @@
                             :secret "aS3BBfU1TuMIZRdp6UGmcQVkOZdgweg3",
                             :data
                             [{:start    "2020-11-01T20:51:00.000Z",
-                              :end      "2020-11-01T20:53:00.000Z",
+                              :end      "2020-11-01T20:51:00.000Z",
+                              :status   "inactive",
+                              :task     "WELKIN-76",
+                              :inactive true}
+                             {:start    "2020-11-01T20:53:00.000Z",
+                              :end      "2020-11-01T20:56:00.000Z",
                               :status   "active",
                               :task     "WELKIN-76",
                               :inactive false}],
@@ -105,7 +110,7 @@
                             :secret "aS3BBfU1TuMIZRdp6UGmcQVkOZdgweg3",
                             :data
                             [{:start    "2020-11-01T20:52:00.000Z",
-                              :end      "2020-11-01T20:54:00.000Z",
+                              :end      "2020-11-01T20:55:00.000Z",
                               :status   "active",
                               :task     "WELKIN-76",
                               :inactive false}],
@@ -229,26 +234,11 @@
 
   (str (name :tasd) "123"))
 
-(defn collect-query [x]
-  (for [temp x]
-    (let [offset (:offset temp)
-          date   (utils/formatlocal (-> temp :date) offset)
-          start  (utils/formatlocal (c/to-string (t/with-time-at-start-of-day date)) offset)
-          end    (utils/formatlocal (c/to-string (t/with-time-at-start-of-day (t/plus- date (t/days 1)))) offset)]
-      (assoc temp
-             :startDay (c/to-string start)
-             :endDay (c/to-string end)))))
 
 (defmethod multi-handler :submit
   [request]
   (try
-    (let [body  (:body request)
-          query (collect-query (:query body))]
-      (api/load-resource
-        {:endpoint :submit
-         :method   :POST
-         :body     (assoc body
-                          :query query)})
-      (responses/ok {}))
+    (subservice/submit-time (:body request))
+    (responses/ok {})
     (catch Exception e
       (responses/error (ex-data e) e))))
