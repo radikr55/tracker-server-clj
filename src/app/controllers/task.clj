@@ -29,7 +29,7 @@
       ;; (pprint end)
       (doseq [log track-logs]
         (service/save-track-logs user-id log))
-      ;; (active-repo/delete user-id code)
+      (active-repo/delete user-id code)
       (responses/ok {:code code}))
     (catch Exception e
       (responses/error (ex-data e) e))))

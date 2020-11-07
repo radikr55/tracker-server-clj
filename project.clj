@@ -37,7 +37,7 @@
             [lein-ubersource "0.1.1"]
             [lein-plantuml "0.1.22"]]
   :codox {:output-path "doc/codox"
-          :doc-file    ["doc/topics/intro.md", "doc/topics/test.md"]
+          :doc-files   ["doc/topics/intro.md", "doc/topics/test.md"]
           :metadata    {:doc/format :markdown}}
   :plantuml [["resources/*.puml" :png "doc/images"]
              ["presentation/*.txt" "svg"]])

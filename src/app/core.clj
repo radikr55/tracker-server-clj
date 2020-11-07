@@ -29,26 +29,21 @@
     (let [{:keys [uri]} request
           request*      (bidi/match-route*
                           routes uri request)]
-      (time (handler request*)))))
-
-(defn wrap-user
-  [handler]
-  (fn [request]
-    (if (contains? white-list (:handler request))
-      (handler request)
-      (let [jira-user-name (api/load-resource {:endpoint :jira-user
-                                               :body     (:body request)})
-            user-id        (-> (u/get-user-id jira-user-name)
-                                first
-                                :id)]
-        (handler (assoc request
-                        :user-id        user-id
-                        :jira-user-name jira-user-name))))))
+      (if (contains? white-list (:handler request*))
+        (handler request*)
+        (let [jira-user-name (api/load-resource {:endpoint :jira-user
+                                                 :body     (:body request*)})
+              user-id        (-> (u/get-user-id jira-user-name)
+                                 first
+                                 :id)]
+          (handler (assoc request*
+                          :user-id        user-id
+                          :jira-user-name jira-user-name))))
+      )))
 
 (def app
   (->
     (wrap-handler multi-handler)
-    (wrap-user)
     (wrap-json-body {:keywords? true})
     wrap-json-response
     (wrap-resource "public")))

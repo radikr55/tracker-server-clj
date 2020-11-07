@@ -42,8 +42,3 @@
 </tr>
 </tbody>
 </table>
-
-insert code 
-
-    (defn test) 
-

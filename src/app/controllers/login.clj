@@ -31,3 +31,8 @@
   [request]
   (responses/ok {:name (api/load-resource {:body     (:body request )
                                            :endpoint :jira-user}) }))
+
+(comment
+  (multi-handler {:handler :auth-link})
+
+  )
